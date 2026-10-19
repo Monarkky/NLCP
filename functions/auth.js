@@ -4,46 +4,46 @@ export async function onRequest(context) {
 
     try {
         const data = await request.json();
-        const { action, email, password, name, role, twoFactorEnabled, twoFactorSecret, status } = data;
+        const { action, user_id, password, name, role, twoFactorEnabled, twoFactorSecret, status } = data;
 
         if (action === "register") {
-            const existing = await env.DB.prepare("SELECT email FROM users WHERE email = ?").bind(email).first();
-            if (existing) return Response.json({ success: false, message: "Email already exists in database" });
+            const existing = await env.DB.prepare("SELECT user_id FROM users WHERE user_id = ?").bind(user_id).first();
+            if (existing) return Response.json({ success: false, message: "User ID already exists" });
 
             const secret = twoFactorSecret || "NLCPSECRET" + Date.now();
             await env.DB.prepare(
-                "INSERT INTO users (name, email, password, role, twoFactorEnabled, twoFactorSecret, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
-            ).bind(name, email, password, role, 0, secret, "offline").run();
+                "INSERT INTO users (name, user_id, password, role, twoFactorEnabled, twoFactorSecret, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).bind(name, user_id, password, role, 0, secret, "offline").run();
 
-            const newUser = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+            const newUser = await env.DB.prepare("SELECT * FROM users WHERE user_id = ?").bind(user_id).first();
             return Response.json({ success: true, message: "User registered securely", user: newUser });
         }
 
         if (action === "login") {
-            const user = await env.DB.prepare("SELECT * FROM users WHERE email = ? AND password = ?").bind(email, password).first();
-            if (!user) return Response.json({ success: false, message: "Invalid credentials" });
+            const user = await env.DB.prepare("SELECT * FROM users WHERE user_id = ? AND password = ?").bind(user_id, password).first();
+            if (!user) return Response.json({ success: false, message: "Invalid ID or password" });
             return Response.json({ success: true, user });
         }
 
         if (action === "get_users") {
-            const { results } = await env.DB.prepare("SELECT name, email, role, status, twoFactorEnabled, password, twoFactorSecret FROM users").all();
+            const { results } = await env.DB.prepare("SELECT name, user_id, role, status, twoFactorEnabled, password, twoFactorSecret FROM users").all();
             return Response.json({ success: true, users: results });
         }
 
         if (action === "delete_user") {
-            await env.DB.prepare("DELETE FROM users WHERE email = ?").bind(email).run();
+            await env.DB.prepare("DELETE FROM users WHERE user_id = ?").bind(user_id).run();
             return Response.json({ success: true, message: "Account deleted securely" });
         }
 
         if (action === "update_user") {
             await env.DB.prepare(
-                "UPDATE users SET password = ?, twoFactorEnabled = ?, twoFactorSecret = ?, name = ? WHERE email = ?"
-            ).bind(password, twoFactorEnabled ? 1 : 0, twoFactorSecret, name, email).run();
+                "UPDATE users SET password = ?, twoFactorEnabled = ?, twoFactorSecret = ?, name = ? WHERE user_id = ?"
+            ).bind(password, twoFactorEnabled ? 1 : 0, twoFactorSecret, name, user_id).run();
             return Response.json({ success: true, message: "User updated" });
         }
 
         if (action === "update_status") {
-            await env.DB.prepare("UPDATE users SET status = ? WHERE email = ?").bind(status, email).run();
+            await env.DB.prepare("UPDATE users SET status = ? WHERE user_id = ?").bind(status, user_id).run();
             return Response.json({ success: true, message: "Status updated" });
         }
 
