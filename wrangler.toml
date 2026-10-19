@@ -5,4 +5,4 @@ compatibility_date = "2024-03-20"
 [[d1_databases]]
 binding = "DB"
 database_name = "nlcp-database"
-database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+database_id = "68e7bdef-318e-4a52-a364-7ddaae2edddd"
